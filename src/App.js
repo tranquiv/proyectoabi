@@ -1,0 +1,118 @@
+import React, { useState, useEffect} from "react";  
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate } from "react-router-dom";
+import { AppBar, Toolbar, Button, Box, Typography, Container, 
+  TextField, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import LogoutIcon from "@mui/icons-material/Logout";
+import HomeIcon from "@mui/icons-material/Home";  // Importamos el ícono de casa
+import Form1 from './Views/Form1'; // Importamos Form1 desde su archivo correspondiente
+import DataView from './Views/DataView';  // Importa el componente correcto
+import Login from './Sesion/Login'; // Importamos Login.js
+import { fakeAuth } from './Sesion/Managements'; // Importamos fakeAuth desde Managements.js
+import Principal from './Views/Principal'; // Importamos Principal.js
+
+// Componente de navegación
+const Navigation = ({ setUpdate }) => {
+  const navigate = useNavigate();
+  const [openDialog, setOpenDialog] = useState(false);
+
+  const handleLogout = () => {
+    setOpenDialog(true); // Mostrar el diálogo
+  };
+  
+  const confirmLogout = () => {
+    fakeAuth.logout(navigate, setUpdate); 
+    setOpenDialog(false);
+  };
+  
+  const cancelLogout = () => {
+    setOpenDialog(false); // Cerrar sin hacer logout
+  };
+
+  return (
+    <>
+      <AppBar position="fixed" sx={{ backgroundColor: "#FF7043" }}>
+        <Toolbar>
+          {/* Botón de menú principal (casa) */}
+          <Button color="inherit" component={Link} to="/principal" sx={{ fontWeight: 'bold', color: '#FFF' }}>
+            <HomeIcon sx={{ mr: 1 }} />  {/* Icono de casa */}
+            Menú Principal
+          </Button>
+
+          {fakeAuth.userRole !== "verificador" && (
+            <Button color="inherit" component={Link} to="/form1" sx={{ fontWeight: 'bold', color: '#FFF' }}>
+              Registrar Plan
+            </Button>
+          )}
+          <Button color="inherit" component={Link} to="/datos" sx={{ fontWeight: 'bold', color: '#FFF' }}>
+            Ver Datos
+          </Button>
+  
+          <Button color="inherit" onClick={handleLogout} endIcon={<LogoutIcon />} sx={{ fontWeight: 'bold', color: '#FFF' }}>
+            Salir
+          </Button>
+        </Toolbar>
+      </AppBar>
+  
+      {/* Aquí va el diálogo de confirmación */}
+      <Dialog open={openDialog} onClose={cancelLogout}>
+        <DialogTitle sx={{ backgroundColor: "#FF7043", color: "#FFF" }}>¿Estás seguro que querés cerrar sesión?</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: "#FF7043" }}>Perderás tu sesión actual.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelLogout} color="primary">Cancelar</Button>
+          <Button onClick={confirmLogout} color="error" variant="contained">Cerrar sesión</Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+};
+
+// Componente principal
+const App = () => {
+  const [update, setUpdate] = useState(Date.now());
+
+  useEffect(() => {
+    // Sincronizar el estado de autenticación con el valor de localStorage
+    setUpdate(Date.now());
+  }, [fakeAuth.isAuthenticated]);
+
+  return (
+    <Router>
+      {fakeAuth.isAuthenticated && <Navigation setUpdate={setUpdate} />}
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            fakeAuth.isAuthenticated ? (
+              <Navigate to="/principal" />
+            ) : (
+              <Login setUpdate={setUpdate} />
+            )
+          }
+        />
+        <Route
+          path="/principal"
+          element={
+            fakeAuth.isAuthenticated ? <Principal /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/form1"
+          element={
+            fakeAuth.isAuthenticated ? <Form1 setUpdate={setUpdate} /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/datos"
+          element={
+            fakeAuth.isAuthenticated ? <DataView /> : <Navigate to="/login" />
+          }
+        />
+        <Route path="*" element={<Navigate to="/login" />} />
+      </Routes>
+    </Router>
+  );
+};
+
+export default App;
