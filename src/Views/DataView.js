@@ -12,14 +12,22 @@ import {
   CircularProgress,
   Alert,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
 import { db } from "../firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
 
 const DataView = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(""); // Estado para manejar errores
+  const [openDialog, setOpenDialog] = useState(false); // Estado para abrir el diálogo
+  const [recordToDelete, setRecordToDelete] = useState(null); // Estado para el registro que se eliminará
+  const navigate = useNavigate(); // Usamos useNavigate
 
   // Función para obtener los datos
   const fetchData = async () => {
@@ -39,6 +47,32 @@ const DataView = () => {
       setLoading(false); // Terminamos de cargar
     }
   };
+
+  // Función para eliminar un registro
+  const handleDelete = async () => {
+    if (recordToDelete) {
+      try {
+        await deleteDoc(doc(db, "planesEducativos", recordToDelete));
+        setData(data.filter((item) => item.id !== recordToDelete)); // Actualizamos la vista después de eliminar
+        setOpenDialog(false); // Cerramos el diálogo
+      } catch (error) {
+        setErrorMessage("Error al eliminar el registro.");
+      }
+    }
+  };
+
+  // Función para abrir el diálogo de confirmación
+  const openDeleteDialog = (id) => {
+    setRecordToDelete(id); // Guardamos el id del registro que queremos eliminar
+    setOpenDialog(true); // Abrimos el diálogo
+  };
+
+  // Función para redirigir a la página de edición
+  const handleEdit = (plan) => {
+    navigate(`/form2/${plan.id}`);
+
+  };
+  
 
   // Cargar los datos al montar el componente
   useEffect(() => {
@@ -69,6 +103,7 @@ const DataView = () => {
                   <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Estrategias</TableCell>
                   <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Recursos</TableCell>
                   <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Tiempo</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -81,11 +116,28 @@ const DataView = () => {
                       <TableCell align="center">{row.estrategias}</TableCell>
                       <TableCell align="center">{row.recursos}</TableCell>
                       <TableCell align="center">{row.tiempo}</TableCell>
+                      <TableCell align="center">
+                        <Button
+                          variant="contained"
+                          color="warning"
+                          sx={{ mr: 2 }}
+                          onClick={() => handleEdit(row)}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          onClick={() => openDeleteDialog(row.id)} // Abrimos el diálogo
+                        >
+                          Eliminar
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={7} align="center">
                       No hay datos disponibles.
                     </TableCell>
                   </TableRow>
@@ -114,6 +166,22 @@ const DataView = () => {
         >
           Refrescar Datos
         </Button>
+
+        {/* Diálogo de confirmación para eliminar */}
+        <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+          <DialogTitle>Confirmar Eliminación</DialogTitle>
+          <DialogContent>
+            ¿Estás seguro de que deseas eliminar este registro?
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenDialog(false)} color="primary">
+              Cancelar
+            </Button>
+            <Button onClick={handleDelete} color="error">
+              Eliminar
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Paper>
     </Container>
   );

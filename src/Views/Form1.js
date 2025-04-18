@@ -9,6 +9,10 @@ import {
   Grid,
   Divider,
   Alert,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
 import { db } from "../firebaseConfig";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
@@ -26,6 +30,9 @@ const Form1 = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(""); // Estado para mensaje de error
   const [successMessage, setSuccessMessage] = useState(""); // Estado para mensaje de éxito
+
+  const [openDialog, setOpenDialog] = useState(false); // Estado para el diálogo de confirmación de limpiar
+  const [openSaveDialog, setOpenSaveDialog] = useState(false); // Estado para el diálogo de confirmación de guardar
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,6 +56,10 @@ const Form1 = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setOpenSaveDialog(true); // Abrir el diálogo de confirmación para guardar
+  };
+
+  const handleConfirmSave = async () => {
     setIsLoading(true); // Cambiar estado a cargando
 
     // Validar formulario
@@ -78,10 +89,19 @@ const Form1 = () => {
       setErrorMessage("Ocurrió un error al guardar los datos. Intenta nuevamente.");
     } finally {
       setIsLoading(false); // Restablecer el estado de carga
+      setOpenSaveDialog(false); // Cerrar el diálogo de confirmación
     }
   };
 
+  const handleCancelSave = () => {
+    setOpenSaveDialog(false); // Cerrar el diálogo de confirmación sin guardar
+  };
+
   const handleClear = () => {
+    setOpenDialog(true); // Abrir el diálogo de confirmación para limpiar
+  };
+
+  const handleConfirmClear = () => {
     setFormData({
       unidad: "",
       objetivos: "",
@@ -91,7 +111,12 @@ const Form1 = () => {
       tiempo: "",
     });
     setErrorMessage("");
-    setSuccessMessage("");
+    setSuccessMessage("Formulario limpiado exitosamente.");
+    setOpenDialog(false); // Cerrar el diálogo de confirmación
+  };
+
+  const handleCancelClear = () => {
+    setOpenDialog(false); // Cerrar el diálogo de confirmación sin limpiar
   };
 
   return (
@@ -120,12 +145,12 @@ const Form1 = () => {
                 required
                 helperText="Ingrese la unidad y los contenidos a enseñar"
                 sx={{
-                  "& .MuiInputLabel-root": { color: "#FF7043" }, // Color del label
+                  "& .MuiInputLabel-root": { color: "#FF7043" },
                   "& .MuiOutlinedInput-root": {
-                    "& fieldset": { borderColor: "#FF7043" }, // Color del borde
-                    "&:hover fieldset": { borderColor: "#FF5722" }, // Color del borde al pasar el ratón
+                    "& fieldset": { borderColor: "#FF7043" },
+                    "&:hover fieldset": { borderColor: "#FF5722" },
                   },
-                  "& .MuiInputBase-root": { color: "#333" }, // Color del texto
+                  "& .MuiInputBase-root": { color: "#333" },
                 }}
               />
             </Grid>
@@ -264,6 +289,38 @@ const Form1 = () => {
           </Grid>
         </Box>
       </Paper>
+
+      {/* Diálogo de confirmación para limpiar */}
+      <Dialog open={openDialog} onClose={handleCancelClear}>
+        <DialogTitle>Confirmar Limpieza</DialogTitle>
+        <DialogContent>
+          <Typography>¿Está seguro de que desea limpiar los campos del formulario?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelClear} color="secondary">
+            Cancelar
+          </Button>
+          <Button onClick={handleConfirmClear} color="primary">
+            Limpiar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Diálogo de confirmación para guardar */}
+      <Dialog open={openSaveDialog} onClose={handleCancelSave}>
+        <DialogTitle>Confirmar Guardado</DialogTitle>
+        <DialogContent>
+          <Typography>¿Está seguro de que desea guardar este plan educativo?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelSave} color="secondary">
+            Cancelar
+          </Button>
+          <Button onClick={handleConfirmSave} color="primary">
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

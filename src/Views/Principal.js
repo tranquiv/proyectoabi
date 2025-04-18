@@ -3,14 +3,13 @@ import { Box, Typography, Container, Paper, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
 const Principal = () => {
-  // Aquí puedes obtener el nombre del usuario desde el estado si lo tienes almacenado
-  const username = "tranquiv"; // Esto puede ser dinámico según tu estado de usuario
+  
 
   return (
     <Container maxWidth="md">
       <Paper elevation={5} sx={{ p: 6, mt: 15, borderRadius: 3, backgroundColor: "#FFEBE0" }}>
         <Typography variant="h4" gutterBottom align="center" sx={{ fontWeight: "bold", color: "#FF7043" }}>
-          ¡Bienvenido, {username}!
+          ¡Bienvenido!
         </Typography>
 
         <Grid container justifyContent="center" sx={{ mt: 4 }}>

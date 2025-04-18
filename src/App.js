@@ -9,6 +9,9 @@ import DataView from './Views/DataView';  // Importa el componente correcto
 import Login from './Sesion/Login'; // Importamos Login.js
 import { fakeAuth } from './Sesion/Managements'; // Importamos fakeAuth desde Managements.js
 import Principal from './Views/Principal'; // Importamos Principal.js
+import Form2 from './Views/Form2'; // Importamos Form2.js
+
+
 
 // Componente de navegación
 const Navigation = ({ setUpdate }) => {
@@ -101,6 +104,12 @@ const App = () => {
           path="/form1"
           element={
             fakeAuth.isAuthenticated ? <Form1 setUpdate={setUpdate} /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/form2/:id"
+          element={
+            fakeAuth.isAuthenticated ? <Form2 /> : <Navigate to="/login" />
           }
         />
         <Route
