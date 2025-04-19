@@ -5,9 +5,7 @@ import {
   Typography,
   Button,
   Container,
-  Paper,
   Grid,
-  Divider,
   Alert,
   Dialog,
   DialogActions,
@@ -28,11 +26,10 @@ const Form1 = () => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(""); // Estado para mensaje de error
-  const [successMessage, setSuccessMessage] = useState(""); // Estado para mensaje de éxito
-
-  const [openDialog, setOpenDialog] = useState(false); // Estado para el diálogo de confirmación de limpiar
-  const [openSaveDialog, setOpenSaveDialog] = useState(false); // Estado para el diálogo de confirmación de guardar
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [openDialog, setOpenDialog] = useState(false);
+  const [openSaveDialog, setOpenSaveDialog] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,7 +39,6 @@ const Form1 = () => {
     }));
   };
 
-  // Validación simple antes de enviar el formulario
   const validateForm = () => {
     return (
       formData.unidad &&
@@ -56,13 +52,12 @@ const Form1 = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setOpenSaveDialog(true); // Abrir el diálogo de confirmación para guardar
+    setOpenSaveDialog(true);
   };
 
   const handleConfirmSave = async () => {
-    setIsLoading(true); // Cambiar estado a cargando
+    setIsLoading(true);
 
-    // Validar formulario
     if (!validateForm()) {
       setIsLoading(false);
       setErrorMessage("Por favor, completa todos los campos.");
@@ -75,7 +70,7 @@ const Form1 = () => {
         timestamp: Timestamp.now(),
       });
       setSuccessMessage("Plan registrado correctamente.");
-      setErrorMessage(""); // Limpiar mensaje de error
+      setErrorMessage("");
       setFormData({
         unidad: "",
         objetivos: "",
@@ -88,17 +83,17 @@ const Form1 = () => {
       console.error("Error al guardar en Firestore:", error);
       setErrorMessage("Ocurrió un error al guardar los datos. Intenta nuevamente.");
     } finally {
-      setIsLoading(false); // Restablecer el estado de carga
-      setOpenSaveDialog(false); // Cerrar el diálogo de confirmación
+      setIsLoading(false);
+      setOpenSaveDialog(false);
     }
   };
 
   const handleCancelSave = () => {
-    setOpenSaveDialog(false); // Cerrar el diálogo de confirmación sin guardar
+    setOpenSaveDialog(false);
   };
 
   const handleClear = () => {
-    setOpenDialog(true); // Abrir el diálogo de confirmación para limpiar
+    setOpenDialog(true);
   };
 
   const handleConfirmClear = () => {
@@ -112,183 +107,152 @@ const Form1 = () => {
     });
     setErrorMessage("");
     setSuccessMessage("Formulario limpiado exitosamente.");
-    setOpenDialog(false); // Cerrar el diálogo de confirmación
+    setOpenDialog(false);
   };
 
   const handleCancelClear = () => {
-    setOpenDialog(false); // Cerrar el diálogo de confirmación sin limpiar
+    setOpenDialog(false);
   };
 
   return (
-    <Container maxWidth="md">
-      <Paper elevation={5} sx={{ p: 6, mt: 15, borderRadius: 3, backgroundColor: "#FFEBE0" }}>
-        <Typography variant="h4" gutterBottom align="center" sx={{ fontWeight: "bold", color: "#FF7043" }}>
-          Registrar Plan Educativo
-        </Typography>
+    <Container maxWidth="md" sx={{ mt: 10 }}>
+      {/* Título del formulario */}
+      <Typography variant="h6" gutterBottom>
+        Registrar Plan Educativo
+      </Typography>
 
-        <Divider sx={{ my: 3, borderColor: "#FF7043" }} />
+      {/* Mensajes de error o éxito */}
+      {errorMessage && <Alert severity="error" sx={{ backgroundColor: "#FFCCBC", color: "#D32F2F" }}>{errorMessage}</Alert>}
+      {successMessage && <Alert severity="success" sx={{ backgroundColor: "#C8E6C9", color: "#388E3C" }}>{successMessage}</Alert>}
 
-        {/* Mensajes de error o éxito */}
-        {errorMessage && <Alert severity="error" sx={{ backgroundColor: "#FFCCBC", color: "#D32F2F" }}>{errorMessage}</Alert>}
-        {successMessage && <Alert severity="success" sx={{ backgroundColor: "#C8E6C9", color: "#388E3C" }}>{successMessage}</Alert>}
-
-        <Box component="form" onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Unidad y Contenidos"
-                name="unidad"
-                value={formData.unidad}
-                onChange={handleChange}
-                fullWidth
-                multiline
-                required
-                helperText="Ingrese la unidad y los contenidos a enseñar"
-                sx={{
-                  "& .MuiInputLabel-root": { color: "#FF7043" },
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": { borderColor: "#FF7043" },
-                    "&:hover fieldset": { borderColor: "#FF5722" },
-                  },
-                  "& .MuiInputBase-root": { color: "#333" },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Objetivos Didácticos"
-                name="objetivos"
-                value={formData.objetivos}
-                onChange={handleChange}
-                fullWidth
-                multiline
-                required
-                helperText="Escriba los objetivos didácticos de la unidad"
-                sx={{
-                  "& .MuiInputLabel-root": { color: "#FF7043" },
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": { borderColor: "#FF7043" },
-                    "&:hover fieldset": { borderColor: "#FF5722" },
-                  },
-                  "& .MuiInputBase-root": { color: "#333" },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Situaciones de Enseñanza y Aprendizaje"
-                name="situaciones"
-                value={formData.situaciones}
-                onChange={handleChange}
-                fullWidth
-                multiline
-                required
-                helperText="Describa las situaciones de enseñanza y aprendizaje"
-                sx={{
-                  "& .MuiInputLabel-root": { color: "#FF7043" },
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": { borderColor: "#FF7043" },
-                    "&:hover fieldset": { borderColor: "#FF5722" },
-                  },
-                  "& .MuiInputBase-root": { color: "#333" },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Estrategias Metodológicas"
-                name="estrategias"
-                value={formData.estrategias}
-                onChange={handleChange}
-                fullWidth
-                multiline
-                required
-                helperText="Indique las estrategias metodológicas"
-                sx={{
-                  "& .MuiInputLabel-root": { color: "#FF7043" },
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": { borderColor: "#FF7043" },
-                    "&:hover fieldset": { borderColor: "#FF5722" },
-                  },
-                  "& .MuiInputBase-root": { color: "#333" },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Recursos Didácticos"
-                name="recursos"
-                value={formData.recursos}
-                onChange={handleChange}
-                fullWidth
-                multiline
-                required
-                helperText="Especifique los recursos didácticos necesarios"
-                sx={{
-                  "& .MuiInputLabel-root": { color: "#FF7043" },
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": { borderColor: "#FF7043" },
-                    "&:hover fieldset": { borderColor: "#FF5722" },
-                  },
-                  "& .MuiInputBase-root": { color: "#333" },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Tiempo de Ejecución"
-                name="tiempo"
-                value={formData.tiempo}
-                onChange={handleChange}
-                fullWidth
-                required
-                helperText="Indique el tiempo estimado para ejecutar el plan"
-                sx={{
-                  "& .MuiInputLabel-root": { color: "#FF7043" },
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": { borderColor: "#FF7043" },
-                    "&:hover fieldset": { borderColor: "#FF5722" },
-                  },
-                  "& .MuiInputBase-root": { color: "#333" },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="warning"
-                fullWidth
-                size="large"
-                sx={{ py: 1.5, fontWeight: "bold", fontSize: "1rem", backgroundColor: "#FF7043" }}
-                disabled={isLoading}
-              >
-                {isLoading ? "Guardando..." : "Guardar Plan"}
-              </Button>
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <Button
-                type="button"
-                variant="outlined"
-                color="secondary"
-                fullWidth
-                size="large"
-                sx={{ py: 1.5, fontWeight: "bold", fontSize: "1rem", borderColor: "#FF7043", color: "#FF7043" }}
-                onClick={handleClear}
-              >
-                Limpiar
-              </Button>
-            </Grid>
+      <Box component="form" onSubmit={handleSubmit}>
+        <Grid container spacing={3}>
+          {/* Campo Unidad y Contenidos */}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Unidad y Contenidos"
+              name="unidad"
+              value={formData.unidad}
+              onChange={handleChange}
+              multiline
+              required
+              helperText="Ingrese la unidad y los contenidos a enseñar"
+              margin="normal"
+              variant="outlined"
+            />
           </Grid>
-        </Box>
-      </Paper>
+
+          {/* Campo Objetivos Didácticos */}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Objetivos Didácticos"
+              name="objetivos"
+              value={formData.objetivos}
+              onChange={handleChange}
+              multiline
+              required
+              helperText="Escriba los objetivos didácticos de la unidad"
+              margin="normal"
+              variant="outlined"
+            />
+          </Grid>
+
+          {/* Campo Situaciones de Enseñanza */}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Situaciones de Enseñanza y Aprendizaje"
+              name="situaciones"
+              value={formData.situaciones}
+              onChange={handleChange}
+              multiline
+              required
+              helperText="Describa las situaciones de enseñanza y aprendizaje"
+              margin="normal"
+              variant="outlined"
+            />
+          </Grid>
+
+          {/* Campo Estrategias Metodológicas */}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Estrategias Metodológicas"
+              name="estrategias"
+              value={formData.estrategias}
+              onChange={handleChange}
+              multiline
+              required
+              helperText="Indique las estrategias metodológicas"
+              margin="normal"
+              variant="outlined"
+            />
+          </Grid>
+
+          {/* Campo Recursos Didácticos */}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Recursos Didácticos"
+              name="recursos"
+              value={formData.recursos}
+              onChange={handleChange}
+              multiline
+              required
+              helperText="Especifique los recursos didácticos necesarios"
+              margin="normal"
+              variant="outlined"
+            />
+          </Grid>
+
+          {/* Campo Tiempo de Ejecución */}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Tiempo de Ejecución"
+              name="tiempo"
+              value={formData.tiempo}
+              onChange={handleChange}
+              required
+              helperText="Indique el tiempo estimado para ejecutar el plan"
+              margin="normal"
+              variant="outlined"
+            />
+          </Grid>
+
+          {/* Botón de guardar */}
+          <Grid item xs={12} sm={6}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="warning"
+              fullWidth
+              size="large"
+              sx={{ py: 1.5, fontWeight: "bold", fontSize: "1rem", backgroundColor: "#FF7043" }}
+              disabled={isLoading}
+            >
+              {isLoading ? "Guardando..." : "Guardar Plan"}
+            </Button>
+          </Grid>
+
+          {/* Botón de limpiar */}
+          <Grid item xs={12} sm={6}>
+            <Button
+              type="button"
+              variant="outlined"
+              color="secondary"
+              fullWidth
+              size="large"
+              sx={{ py: 1.5, fontWeight: "bold", fontSize: "1rem", borderColor: "#FF7043", color: "#FF7043" }}
+              onClick={handleClear}
+            >
+              Limpiar
+            </Button>
+          </Grid>
+        </Grid>
+      </Box>
 
       {/* Diálogo de confirmación para limpiar */}
       <Dialog open={openDialog} onClose={handleCancelClear}>

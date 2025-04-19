@@ -1,18 +1,27 @@
 import React, { useState, useEffect } from "react";
 import {
-  Box, TextField, Typography, Button, Container, Paper, Grid, Divider, Alert, Dialog, DialogActions, DialogContent, DialogTitle
+  Box,
+  TextField,
+  Typography,
+  Button,
+  Container,
+  Paper,
+  Grid,
+  Divider,
+  Alert,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
 import { db } from "../firebaseConfig";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useParams } from "react-router-dom";
-
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 const Form2 = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
-
 
   const [formData, setFormData] = useState({
     unidad: "",
@@ -33,7 +42,7 @@ const Form2 = () => {
       try {
         const docRef = doc(db, "planesEducativos", id);
         const docSnap = await getDoc(docRef);
-  
+
         if (docSnap.exists()) {
           const planData = docSnap.data();
           setFormData({
@@ -52,7 +61,7 @@ const Form2 = () => {
         setErrorMessage("Error al cargar los datos del plan.");
       }
     };
-  
+
     fetchPlan();
   }, [id]);
 
@@ -83,7 +92,7 @@ const Form2 = () => {
       await updateDoc(planRef, formData);
       setSuccessMessage("Plan actualizado correctamente.");
       setErrorMessage("");
-      setTimeout(() => navigate("/datos"), 1500); // volver después de actualizar
+      setTimeout(() => navigate("/datos"), 1500);
     } catch (error) {
       console.error("Error al actualizar:", error);
       setErrorMessage("Hubo un error al actualizar el plan.");
@@ -98,27 +107,26 @@ const Form2 = () => {
   };
 
   return (
-    <Container maxWidth="md">
-      <Paper elevation={5} sx={{ p: 6, mt: 10, borderRadius: 3, backgroundColor: "#FFFDE7" }}>
-        <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: "bold", color: "#F57C00" }}>
+    <Container maxWidth="md" sx={{ mt: 10 }}>
+        <Typography variant="h4" gutterBottom align="center" sx={{ fontWeight: "bold", color: "#FF7043" }}>
           Editar Plan Educativo
         </Typography>
 
-        <Divider sx={{ my: 3, borderColor: "#F57C00" }} />
+        <Divider sx={{ my: 3, borderColor: "#FF7043" }} />
 
-        {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
-        {successMessage && <Alert severity="success">{successMessage}</Alert>}
+        {errorMessage && <Alert severity="error" sx={{ backgroundColor: "#FFCCBC", color: "#D32F2F" }}>{errorMessage}</Alert>}
+        {successMessage && <Alert severity="success" sx={{ backgroundColor: "#C8E6C9", color: "#388E3C" }}>{successMessage}</Alert>}
 
         <Box component="form" onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             {[
-              { name: "unidad", label: "Unidad y Contenidos" },
-              { name: "objetivos", label: "Objetivos Didácticos" },
-              { name: "situaciones", label: "Situaciones de Enseñanza y Aprendizaje" },
-              { name: "estrategias", label: "Estrategias Metodológicas" },
-              { name: "recursos", label: "Recursos Didácticos" },
-              { name: "tiempo", label: "Tiempo de Ejecución" },
-            ].map(({ name, label }) => (
+              { name: "unidad", label: "Unidad y Contenidos", helper: "Ingrese la unidad y los contenidos a enseñar" },
+              { name: "objetivos", label: "Objetivos Didácticos", helper: "Escriba los objetivos didácticos de la unidad" },
+              { name: "situaciones", label: "Situaciones de Enseñanza y Aprendizaje", helper: "Describa las situaciones de enseñanza y aprendizaje" },
+              { name: "estrategias", label: "Estrategias Metodológicas", helper: "Indique las estrategias metodológicas" },
+              { name: "recursos", label: "Recursos Didácticos", helper: "Especifique los recursos didácticos necesarios" },
+              { name: "tiempo", label: "Tiempo de Ejecución", helper: "Indique el tiempo estimado para ejecutar el plan" },
+            ].map(({ name, label, helper }) => (
               <Grid item xs={12} sm={6} key={name}>
                 <TextField
                   label={label}
@@ -128,11 +136,12 @@ const Form2 = () => {
                   fullWidth
                   multiline={name !== "tiempo"}
                   required
+                  helperText={helper}
                   sx={{
-                    "& .MuiInputLabel-root": { color: "#F57C00" },
+                    "& .MuiInputLabel-root": { color: "#FF7043" },
                     "& .MuiOutlinedInput-root": {
-                      "& fieldset": { borderColor: "#F57C00" },
-                      "&:hover fieldset": { borderColor: "#EF6C00" },
+                      "& fieldset": { borderColor: "#FF7043" },
+                      "&:hover fieldset": { borderColor: "#FF5722" },
                     },
                     "& .MuiInputBase-root": { color: "#333" },
                   }}
@@ -140,22 +149,36 @@ const Form2 = () => {
               </Grid>
             ))}
 
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6}>
               <Button
                 type="submit"
                 variant="contained"
                 color="warning"
                 fullWidth
                 size="large"
-                sx={{ py: 1.5, fontWeight: "bold", fontSize: "1rem", backgroundColor: "#F57C00" }}
+                sx={{ py: 1.5, fontWeight: "bold", fontSize: "1rem", backgroundColor: "#FF7043" }}
                 disabled={isLoading}
               >
-                {isLoading ? "Guardando cambios..." : "Actualizar Plan"}
+                {isLoading ? "Guardando..." : "Actualizar Plan"}
+              </Button>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Button
+                type="button"
+                variant="outlined"
+                color="secondary"
+                fullWidth
+                size="large"
+                sx={{ py: 1.5, fontWeight: "bold", fontSize: "1rem", borderColor: "#FF7043", color: "#FF7043" }}
+                onClick={() => navigate("/datos")}
+              >
+                Cancelar
               </Button>
             </Grid>
           </Grid>
         </Box>
-      </Paper>
+
 
       <Dialog open={openDialog} onClose={handleCancelUpdate}>
         <DialogTitle>Confirmar Actualización</DialogTitle>
@@ -170,5 +193,6 @@ const Form2 = () => {
     </Container>
   );
 };
+
 
 export default Form2;

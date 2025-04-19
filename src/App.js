@@ -1,4 +1,4 @@
-import React, { useState, useEffect} from "react";  
+import React, { useState, useEffect } from "react";   
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate } from "react-router-dom";
 import { AppBar, Toolbar, Button, Box, Typography, Container, 
   TextField, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
@@ -10,8 +10,7 @@ import Login from './Sesion/Login'; // Importamos Login.js
 import { fakeAuth } from './Sesion/Managements'; // Importamos fakeAuth desde Managements.js
 import Principal from './Views/Principal'; // Importamos Principal.js
 import Form2 from './Views/Form2'; // Importamos Form2.js
-
-
+import Datos from './Views/Datos'; // Importamos Datos.js
 
 // Componente de navegación
 const Navigation = ({ setUpdate }) => {
@@ -39,6 +38,10 @@ const Navigation = ({ setUpdate }) => {
           <Button color="inherit" component={Link} to="/principal" sx={{ fontWeight: 'bold', color: '#FFF' }}>
             <HomeIcon sx={{ mr: 1 }} />  {/* Icono de casa */}
             Menú Principal
+          </Button>
+          
+          <Button color="inherit" component={Link} to="/registrar-datos" sx={{ fontWeight: 'bold', color: '#FFF' }}>
+            Registrar Datos
           </Button>
 
           {fakeAuth.userRole !== "verificador" && (
@@ -110,6 +113,12 @@ const App = () => {
           path="/form2/:id"
           element={
             fakeAuth.isAuthenticated ? <Form2 /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/registrar-datos"
+          element={
+            fakeAuth.isAuthenticated ? <Datos /> : <Navigate to="/login" />
           }
         />
         <Route
