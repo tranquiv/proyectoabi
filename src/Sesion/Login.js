@@ -1,42 +1,57 @@
-import React, { useState } from 'react';    
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fakeAuth } from './Managements';
-import { TextField, Button, Box, Typography, IconButton, InputAdornment, CircularProgress, Snackbar } from '@mui/material';
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  IconButton,
+  InputAdornment,
+  CircularProgress,
+  Snackbar,
+} from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 const Login = ({ setUpdate }) => {
-  const [name, setName] = useState(''); // Estado para el nombre de usuario (coincide con Firestore)
+  const [name, setName] = useState('');
   const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
+
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    setLoading(true);
-    setErrorMessage('');
+    if (!name || !pin) {
+      setErrorMessage("Por favor, completa todos los campos.");
+      setOpenSnackbar(true);
+      return;
+    }
 
+    setLoading(true);
     try {
-      const isAuthenticated = await fakeAuth.login(name, pin, navigate, setUpdate);
+      const isAuthenticated = await fakeAuth.login(name.trim(), pin.trim(), navigate, setUpdate);
+
       if (!isAuthenticated) {
-        setErrorMessage('Usuario o PIN incorrectos.');
+        localStorage.setItem("userName", name.trim()); // <-- ESTA LÍNEA es clave
+    } else {
+        setErrorMessage("Usuario o PIN incorrectos.");
         setOpenSnackbar(true);
       }
     } catch (error) {
-      setErrorMessage('Error al autenticar el usuario. Intente nuevamente.');
+      setErrorMessage("Error al autenticar. Intenta nuevamente.");
       setOpenSnackbar(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCloseSnackbar = () => {
-    setOpenSnackbar(false);
-  };
+  const handleCloseSnackbar = () => setOpenSnackbar(false);
 
   return (
-    <Box textAlign="center" mt={10} sx={{ maxWidth: 400, mx: 'auto', padding: 2 }}>
+    <Box textAlign="center" mt={10} sx={{ maxWidth: 400, mx: 'auto', p: 2 }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#FF6F00' }}>
         Iniciar Sesión
       </Typography>
@@ -47,18 +62,10 @@ const Login = ({ setUpdate }) => {
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-        sx={{
-          marginBottom: '20px', 
-          width: '100%',  // Asegura que ocupe todo el ancho posible
-          '& .MuiInputLabel-root': { color: '#FF6F00' },
-          '& .MuiOutlinedInput-root': { 
-            '& fieldset': { borderColor: '#FF6F00' },
-            '&:hover fieldset': { borderColor: '#FF6F00' },
-            '&.Mui-focused fieldset': { borderColor: '#FF6F00' }
-          }
-        }}
+        fullWidth
+        sx={{ mb: 2 }}
       />
-      
+
       <TextField
         label="Ingrese su PIN"
         variant="outlined"
@@ -67,16 +74,8 @@ const Login = ({ setUpdate }) => {
         onChange={(e) => setPin(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
         inputProps={{ maxLength: 5 }}
-        sx={{
-          marginBottom: '20px', 
-          width: '100%',  // Asegura que ocupe todo el ancho posible
-          '& .MuiInputLabel-root': { color: '#FF6F00' },
-          '& .MuiOutlinedInput-root': { 
-            '& fieldset': { borderColor: '#FF6F00' },
-            '&:hover fieldset': { borderColor: '#FF6F00' },
-            '&.Mui-focused fieldset': { borderColor: '#FF6F00' }
-          }
-        }}
+        fullWidth
+        sx={{ mb: 2 }}
         InputProps={{
           endAdornment: (
             <InputAdornment position="end">
@@ -87,17 +86,17 @@ const Login = ({ setUpdate }) => {
           ),
         }}
       />
-      
-      <Button 
-        variant="contained" 
-        color="warning" 
-        onClick={handleLogin} 
+
+      <Button
+        variant="contained"
+        color="warning"
+        fullWidth
+        onClick={handleLogin}
         disabled={loading}
-        sx={{ 
-          backgroundColor: '#FF6F00', 
+        sx={{
+          backgroundColor: '#FF6F00',
           '&:hover': { backgroundColor: '#E65100' },
-          marginBottom: '20px',
-          width: '100%' // Botón ocupará el ancho completo
+          mb: 2,
         }}
       >
         {loading ? <CircularProgress size={24} /> : 'Ingresar'}
@@ -105,16 +104,16 @@ const Login = ({ setUpdate }) => {
 
       <Snackbar
         open={openSnackbar}
-        autoHideDuration={6000}
+        autoHideDuration={5000}
         onClose={handleCloseSnackbar}
         message={errorMessage}
         sx={{
           '& .MuiSnackbarContent-root': {
-            backgroundColor: '#FF7043', // Naranja para error
+            backgroundColor: '#FF7043',
             color: '#fff',
             borderRadius: '8px',
             padding: '10px',
-          }
+          },
         }}
       />
     </Box>

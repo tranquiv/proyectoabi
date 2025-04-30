@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"; 
+import React, { useEffect, useState } from "react";
 import {
   Container,
   Paper,
@@ -13,161 +13,199 @@ import {
   Alert,
   Button,
   Dialog,
-  DialogActions,
-  DialogContent,
   DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { db } from "../firebaseConfig";
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  deleteDoc,
+  doc,
+  getDoc
+} from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
 const DataView = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState(""); // Estado para manejar errores
-  const [openDialog, setOpenDialog] = useState(false); // Estado para abrir el diálogo
-  const [recordToDelete, setRecordToDelete] = useState(null); // Estado para el registro que se eliminará
-  const navigate = useNavigate(); // Usamos useNavigate
+  const [errorMessage, setErrorMessage] = useState("");
+  const [openDialog, setOpenDialog] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState(null);
+  const [docenteData, setDocenteData] = useState({});
+  const navigate = useNavigate();
 
-  // Función para obtener los datos
   const fetchData = async () => {
-    setLoading(true); // Empezamos a cargar
+    setLoading(true);
     try {
+      const storedUsuario = localStorage.getItem("usuario");
+      if (!storedUsuario) {
+        setErrorMessage("No se encontró información del usuario. Por favor inicia sesión.");
+        setLoading(false);
+        return;
+      }
+
+      const usuario = JSON.parse(storedUsuario);
+      const userName = usuario.name?.trim();
+      if (!userName) {
+        setErrorMessage("Nombre de usuario inválido.");
+        setLoading(false);
+        return;
+      }
+
+      // Obtener los datos de los planes educativos
       const querySnapshot = await getDocs(collection(db, "planesEducativos"));
       const dataList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data(),
+        ...doc.data()
       }));
-      setData(dataList); // Guardamos los datos en el estado
-      setErrorMessage(""); // Limpiamos cualquier mensaje de error
+      const filteredData = dataList.filter(plan => plan.uidDocente?.trim() === userName);
+      setData(filteredData);
+
+      // Obtener los datos del docente
+      const userDocRef = doc(db, "docentes", userName);
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        setDocenteData(docSnap.data());
+      } else {
+        console.warn(`No se encontró documento del docente ${userName}.`);
+      }
+      setErrorMessage("");
     } catch (error) {
-      console.error("Error al obtener los datos de Firestore:", error);
+      console.error("Error al obtener los datos:", error);
       setErrorMessage("Hubo un error al obtener los datos. Intenta nuevamente.");
     } finally {
-      setLoading(false); // Terminamos de cargar
+      setLoading(false);
     }
   };
 
-  // Función para eliminar un registro
   const handleDelete = async () => {
     if (recordToDelete) {
       try {
         await deleteDoc(doc(db, "planesEducativos", recordToDelete));
-        setData(data.filter((item) => item.id !== recordToDelete)); // Actualizamos la vista después de eliminar
-        setOpenDialog(false); // Cerramos el diálogo
+        setData(data.filter(item => item.id !== recordToDelete));
+        setOpenDialog(false);
       } catch (error) {
         setErrorMessage("Error al eliminar el registro.");
       }
     }
   };
 
-  // Función para abrir el diálogo de confirmación
   const openDeleteDialog = (id) => {
-    setRecordToDelete(id); // Guardamos el id del registro que queremos eliminar
-    setOpenDialog(true); // Abrimos el diálogo
+    setRecordToDelete(id);
+    setOpenDialog(true);
   };
 
-  // Función para redirigir a la página de edición
   const handleEdit = (plan) => {
     navigate(`/form2/${plan.id}`);
-
   };
-  
 
-  // Cargar los datos al montar el componente
   useEffect(() => {
     fetchData();
   }, []);
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Paper elevation={5} sx={{ p: 6, borderRadius: 3, backgroundColor: "#FFF3E0" }}>
+      <Paper elevation={5} sx={{ p: 8, borderRadius: 3, backgroundColor: "#FFF3E0" }}>
         <Typography variant="h4" gutterBottom align="center" sx={{ fontWeight: "bold", color: "#FF7043" }}>
-          Datos Cargados - Planes Educativos
+          Datos del Docente y Planes Educativos
         </Typography>
 
-        {/* Mostrar mensaje de error */}
-        {errorMessage && <Alert severity="error" sx={{ backgroundColor: "#FF7043", color: "#FFF" }}>{errorMessage}</Alert>}
+        {errorMessage && (
+          <Alert severity="error" sx={{ backgroundColor: "#FF7043", color: "#FFF" }}>{errorMessage}</Alert>
+        )}
 
-        {/* Mostrar cargando */}
         {loading ? (
           <CircularProgress sx={{ color: "#FF7043", margin: "auto", display: "block" }} />
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead sx={{ backgroundColor: "#FF7043" }}>
-                <TableRow>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Unidad</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Objetivos</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Situaciones</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Estrategias</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Recursos</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Tiempo</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {data.length > 0 ? (
-                  data.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell align="center">{row.unidad}</TableCell>
-                      <TableCell align="center">{row.objetivos}</TableCell>
-                      <TableCell align="center">{row.situaciones}</TableCell>
-                      <TableCell align="center">{row.estrategias}</TableCell>
-                      <TableCell align="center">{row.recursos}</TableCell>
-                      <TableCell align="center">{row.tiempo}</TableCell>
-                      <TableCell align="center">
-                        <Button
-                          variant="contained"
-                          color="warning"
-                          sx={{ mr: 2 }}
-                          onClick={() => handleEdit(row)}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          onClick={() => openDeleteDialog(row.id)} // Abrimos el diálogo
-                        >
-                          Eliminar
-                        </Button>
+          <div>
+            {/* Mostrar los datos del docente */}
+            <Paper sx={{ mb: 4, p: 3, backgroundColor: "#FFEBEE" }}>
+              <Typography variant="h6" sx={{ fontWeight: "bold" }}>Datos del Docente</Typography>
+              <Typography><strong>Nombre:</strong> {docenteData.nombre}</Typography>
+              <Typography><strong>Cédula:</strong> {docenteData.cedula}</Typography>
+              <Typography><strong>Facultad:</strong> {docenteData.facultad}</Typography>
+
+              {/* Mostrar las carreras y materias */}
+              <Typography variant="h6" sx={{ fontWeight: "bold", mt: 2 }}>Carreras</Typography>
+              {docenteData.carreras && docenteData.carreras.length > 0 ? (
+                docenteData.carreras.map((carrera, index) => (
+                  <div key={index}>
+                    <Typography><strong>{carrera.nombre}</strong></Typography>
+                    <ul>
+                      {carrera.materias?.map((materia, idx) => (
+                        <li key={idx}>{materia.nombre}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              ) : (
+                <Typography>No hay carreras asignadas.</Typography>
+              )}
+            </Paper>
+
+            {/* Mostrar los planes educativos */}
+            <TableContainer>
+              <Table>
+                <TableHead sx={{ backgroundColor: "#FF7043" }}>
+                  <TableRow>
+                    <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Carrera</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Materia</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Objetivos</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Situaciones</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Estrategias</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Recursos</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Tiempo</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold", color: "#FFF" }}>Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {data.length > 0 ? (
+                    data.map((plan) =>
+                      plan.unidades.map((unidad, index) => (
+                        <TableRow key={plan.id + "-" + index}>
+                          <TableCell align="center">{unidad.carrera}</TableCell>
+                          <TableCell align="center">{unidad.materia}</TableCell>
+                          <TableCell align="center">{unidad.objetivos}</TableCell>
+                          <TableCell align="center">{unidad.situaciones}</TableCell>
+                          <TableCell align="center">{unidad.estrategias}</TableCell>
+                          <TableCell align="center">{unidad.recursos}</TableCell>
+                          <TableCell align="center">{unidad.tiempo}</TableCell>
+                          <TableCell align="center">
+                            <Button
+                              variant="contained"
+                              color="warning"
+                              sx={{ mr: 2 }}
+                              onClick={() => handleEdit(plan)}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              onClick={() => openDeleteDialog(plan.id)}
+                            >
+                              Eliminar
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center">
+                        No hay planes educativos disponibles.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
-                      No hay datos disponibles.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </div>
         )}
 
-        {/* Botón de refrescar */}
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{
-            mt: 3,
-            display: "block",
-            marginLeft: "auto",
-            marginRight: "auto",
-            backgroundColor: "#FF7043",
-            "&:hover": {
-              backgroundColor: "#FF5722",
-            },
-            fontWeight: "bold",
-          }}
-          onClick={fetchData} // Refrescar los datos sin recargar la página
-        >
-          Refrescar Datos
-        </Button>
-
-        {/* Diálogo de confirmación para eliminar */}
+        {/* Dialog de confirmación para eliminar */}
         <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
           <DialogTitle>Confirmar Eliminación</DialogTitle>
           <DialogContent>
