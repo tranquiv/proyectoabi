@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"; 
+import React, { useState, useEffect } from "react";
 import { db } from "../firebaseConfig";
 import { collection, doc, setDoc, getDoc } from "firebase/firestore";
 import {
@@ -7,15 +7,24 @@ import {
   Typography,
   Box,
   Grid,
-  IconButton,
   Divider,
-  Chip,
+  Card,
+  CardContent,
+  CardHeader,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Paper,
 } from "@mui/material";
-import { Delete } from "@mui/icons-material";
+import { Delete, Edit } from "@mui/icons-material";
+import { Autocomplete } from "@mui/material";
+
 
 const Datos = () => {
   const [form, setForm] = useState({
-    facultad: "",
     nombre: "",
     cedula: "",
     carrera: "",
@@ -23,35 +32,27 @@ const Datos = () => {
     horasTotales: "",
     horasSemanales: "",
   });
-  const [carreras, setCarreras] = useState([]);
+  const [facultadSeleccionada, setFacultadSeleccionada] = useState("");
+  const [facultades, setFacultades] = useState({});
   const [usuario, setUsuario] = useState(null);
 
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem("usuario"));
     setUsuario(u);
-    if (u) {
-      cargarDatos(u.name); // Usamos el campo name o cualquier campo único
-    }
+    if (u) cargarDatos(u.name);
   }, []);
 
   const cargarDatos = async (uid) => {
-    const ref = doc(db, "docentes", uid); // Si necesitas un ID único del usuario, asegúrate de tenerlo
+    const ref = doc(db, "docentes", uid);
     const snap = await getDoc(ref);
     if (snap.exists()) {
       const data = snap.data();
-
-      // Solo actualizamos si los datos de Firebase son diferentes a los actuales en el estado
       setForm((prev) => ({
         ...prev,
-        facultad: data.facultad || prev.facultad,
         nombre: data.nombre || prev.nombre,
         cedula: data.cedula || prev.cedula,
       }));
-
-      // Aquí verificamos si hay carreras para actualizar, evitando sobrescribir el estado con datos vacíos
-      if (data.carreras && data.carreras.length > 0) {
-        setCarreras(data.carreras);
-      }
+      if (data.facultades) setFacultades(data.facultades);
     }
   };
 
@@ -61,31 +62,41 @@ const Datos = () => {
   };
 
   const agregarCarrera = () => {
-    if (!form.carrera || !form.materia || !form.horasTotales || !form.horasSemanales) {
-      alert("Por favor, completa todos los campos.");
+    const { carrera, materia, horasTotales, horasSemanales } = form;
+    if (
+      !facultadSeleccionada ||
+      !carrera.trim() ||
+      !materia.trim() ||
+      horasTotales === "" ||
+      horasSemanales === ""
+    ) {
+      alert("Completa todos los campos.");
       return;
     }
 
-    // Buscar si la carrera ya existe
-    const index = carreras.findIndex((c) => c.nombre === form.carrera);
     const nuevaMateria = {
-      nombre: form.materia,
-      horasTotales: form.horasTotales,
-      horasSemanales: form.horasSemanales,
+      id: crypto.randomUUID(),
+      nombre: materia,
+      horasTotales,
+      horasSemanales,
     };
 
+    const carrerasExistentes = facultades[facultadSeleccionada] || [];
+    const index = carrerasExistentes.findIndex((c) => c.nombre === carrera);
+
+    let nuevasCarreras;
     if (index > -1) {
-      // Si la carrera existe, agregar la materia
-      carreras[index].materias.push(nuevaMateria);
+      nuevasCarreras = [...carrerasExistentes];
+      nuevasCarreras[index].materias.push(nuevaMateria);
     } else {
-      // Si la carrera no existe, crearla
-      carreras.push({
-        nombre: form.carrera,
-        materias: [nuevaMateria],
-      });
+      nuevasCarreras = [...carrerasExistentes, { nombre: carrera, materias: [nuevaMateria] }];
     }
 
-    setCarreras([...carreras]);
+    setFacultades({
+      ...facultades,
+      [facultadSeleccionada]: nuevasCarreras,
+    });
+
     setForm((prev) => ({
       ...prev,
       carrera: "",
@@ -95,120 +106,238 @@ const Datos = () => {
     }));
   };
 
-  const eliminarMateria = (indexCarrera, indexMateria) => {
-    carreras[indexCarrera].materias.splice(indexMateria, 1);
-    if (carreras[indexCarrera].materias.length === 0) {
-      carreras.splice(indexCarrera, 1);
+  const eliminarMateria = (facultad, indexCarrera, idMateria) => {
+    const nuevasCarreras = [...facultades[facultad]];
+    nuevasCarreras[indexCarrera].materias = nuevasCarreras[indexCarrera].materias.filter(
+      (m) => m.id !== idMateria
+    );
+    if (nuevasCarreras[indexCarrera].materias.length === 0) {
+      nuevasCarreras.splice(indexCarrera, 1);
     }
-    setCarreras([...carreras]);
+
+    setFacultades({
+      ...facultades,
+      [facultad]: nuevasCarreras,
+    });
   };
 
   const handleSubmit = async () => {
     if (!usuario) return alert("No hay usuario autenticado");
-
-    const ref = doc(db, "docentes", usuario.name); // Usar el campo `name` o cualquier identificador único
+    const ref = doc(db, "docentes", usuario.name);
     await setDoc(ref, {
-      facultad: form.facultad,
       nombre: form.nombre,
       cedula: form.cedula,
-      carreras: carreras,
+      facultades,
     });
     alert("Datos guardados correctamente");
   };
 
   return (
-    <Box sx={{ maxWidth: 700, mx: "auto", mt: 5 }}>
+    <Box sx={{ maxWidth: 900, mx: "auto", mt: 10, px: 2 }}>
       <Typography variant="h5" gutterBottom>
         Datos del Docente
       </Typography>
 
       <Grid container spacing={2}>
-        {["facultad", "nombre", "cedula"].map((field) => (
-          <Grid item xs={12} sm={6} key={field}>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            label="Nombre"
+            name="nombre"
+            value={form.nombre}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            label="Cédula"
+            name="cedula"
+            value={form.cedula}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+        </Grid>
+      </Grid>
+
+      <Divider sx={{ my: 4 }} />
+
+      <Typography variant="h6" gutterBottom>
+        Agregar Carrera y Materia por Facultad
+      </Typography>
+
+      <Paper sx={{ p: 2, mb: 4, backgroundColor: "#f9f9f9" }}>
+        <Grid container spacing={2}>
+          <Box sx={{ width: "100%", mb: 2 }}>
+  <Autocomplete
+    freeSolo
+    options={Object.keys(facultades)}
+    value={facultadSeleccionada}
+    onChange={(event, newValue) => {
+      setFacultadSeleccionada(newValue || "");
+    }}
+    onInputChange={(event, newInputValue) => {
+      setFacultadSeleccionada(newInputValue);
+    }}
+    renderInput={(params) => (
+      <TextField
+        {...params}
+        label="Facultad"
+        required
+        fullWidth
+        sx={{ maxWidth: 225 }} // o el ancho que prefieras
+      />
+    )}
+  />
+</Box>
+
+
+
+
+          <Grid item xs={12} sm={6}>
             <TextField
-              label={field.charAt(0).toUpperCase() + field.slice(1)}
-              name={field}
-              value={form[field]}
+              label="Carrera"
+              name="carrera"
+              value={form.carrera}
               onChange={handleChange}
               fullWidth
+              required
             />
           </Grid>
-        ))}
-      </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Materia"
+              name="materia"
+              value={form.materia}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Horas Totales"
+              name="horasTotales"
+              type="number"
+              value={form.horasTotales}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Horas Semanales"
+              name="horasSemanales"
+              type="number"
+              value={form.horasSemanales}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <Button variant="contained" fullWidth onClick={agregarCarrera}>
+              Agregar Materia
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
 
-      <Divider sx={{ my: 3 }} />
-
-      <Typography variant="h6">Agregar Carreras y Materias</Typography>
-      <Grid container spacing={2}>
-        <Grid item xs={6}>
-          <TextField
-            label="Carrera"
-            name="carrera"
-            value={form.carrera}
-            onChange={handleChange}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={6}>
-          <TextField
-            label="Materia"
-            name="materia"
-            value={form.materia}
-            onChange={handleChange}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={6}>
-          <TextField
-            label="Horas Totales"
-            name="horasTotales"
-            type="number"
-            value={form.horasTotales}
-            onChange={handleChange}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={6}>
-          <TextField
-            label="Horas Semanales"
-            name="horasSemanales"
-            type="number"
-            value={form.horasSemanales}
-            onChange={handleChange}
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <Button variant="contained" onClick={agregarCarrera}>
-            Agregar Materia
-          </Button>
-        </Grid>
-      </Grid>
-
-      <Box mt={2}>
-        {carreras.map((carrera, i) => (
-          <Box key={i} mb={2}>
-            <Typography variant="subtitle1" fontWeight="bold">
-              {carrera.nombre}
-            </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-              {carrera.materias.map((m, j) => (
-                <Chip
-                  key={j}
-                  label={`${m.nombre} - ${m.horasTotales} horas totales, ${m.horasSemanales} horas semanales`}
-                  onDelete={() => eliminarMateria(i, j)}
-                  deleteIcon={<Delete />}
-                />
-              ))}
-            </Box>
-          </Box>
-        ))}
-      </Box>
+      {/* Visualización */}
+      {Object.entries(facultades).map(([facultad, carreras]) => (
+        <Box key={facultad} sx={{ mb: 5 }}>
+          <Typography variant="h6" gutterBottom>
+            {facultad}
+          </Typography>
+          {carreras.map((carrera, i) => (
+            <Card key={i} variant="outlined" sx={{ mb: 2 }}>
+              <CardHeader
+                title={carrera.nombre}
+                action={
+                  <Button
+                    color="error"
+                    onClick={() => {
+                      const confirm = window.confirm(
+                        `¿Eliminar la carrera "${carrera.nombre}" y todas sus materias de la facultad "${facultad}"?`
+                      );
+                      if (confirm) {
+                        const nuevasCarreras = [...carreras];
+                        nuevasCarreras.splice(i, 1);
+                        setFacultades({
+                          ...facultades,
+                          [facultad]: nuevasCarreras,
+                        });
+                      }
+                    }}
+                  >
+                    Eliminar Carrera
+                  </Button>
+                }
+              />
+              <CardContent>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Materia</TableCell>
+                      <TableCell align="center">Horas Totales</TableCell>
+                      <TableCell align="center">Horas Semanales</TableCell>
+                      <TableCell align="center">Acciones</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {carrera.materias.map((m, j) => (
+                      <TableRow key={m.id}>
+                        <TableCell>{m.nombre}</TableCell>
+                        <TableCell align="center">{m.horasTotales}</TableCell>
+                        <TableCell align="center">{m.horasSemanales}</TableCell>
+                        <TableCell align="center">
+                          <IconButton
+                            onClick={() => {
+                              setForm({
+                                ...form,
+                                carrera: carrera.nombre,
+                                materia: m.nombre,
+                                horasTotales: m.horasTotales,
+                                horasSemanales: m.horasSemanales,
+                              });
+                              setFacultadSeleccionada(facultad);
+                              const nuevasCarreras = [...carreras];
+                              nuevasCarreras[i].materias.splice(j, 1);
+                              if (nuevasCarreras[i].materias.length === 0) {
+                                nuevasCarreras.splice(i, 1);
+                              }
+                              setFacultades({
+                                ...facultades,
+                                [facultad]: nuevasCarreras,
+                              });
+                            }}
+                          >
+                            <Edit />
+                          </IconButton>
+                          <IconButton
+                            color="error"
+                            onClick={() => eliminarMateria(facultad, i, m.id)}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      ))}
 
       <Button
         variant="contained"
         color="primary"
-        sx={{ mt: 3 }}
+        sx={{ mt: 4, mb: 6 }}
+        fullWidth
         onClick={handleSubmit}
       >
         Guardar Datos

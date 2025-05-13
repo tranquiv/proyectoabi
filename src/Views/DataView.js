@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";  
 import {
   Container,
   Paper,
@@ -16,6 +16,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { db } from "../firebaseConfig";
 import {
@@ -23,7 +27,7 @@ import {
   getDocs,
   deleteDoc,
   doc,
-  getDoc
+  getDoc,
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
@@ -34,50 +38,99 @@ const DataView = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState(null);
   const [docenteData, setDocenteData] = useState({});
+  const [facultades, setFacultades] = useState([]);
+  const [carreras, setCarreras] = useState([]);
+  const [materias, setMaterias] = useState([]);
+  const [selectedFacultad, setSelectedFacultad] = useState("");
+  const [selectedCarrera, setSelectedCarrera] = useState("");
+  const [selectedMateria, setSelectedMateria] = useState("");
   const navigate = useNavigate();
 
   const fetchData = async () => {
-    setLoading(true);
-    try {
-      const storedUsuario = localStorage.getItem("usuario");
-      if (!storedUsuario) {
-        setErrorMessage("No se encontró información del usuario. Por favor inicia sesión.");
-        setLoading(false);
-        return;
-      }
-
-      const usuario = JSON.parse(storedUsuario);
-      const userName = usuario.name?.trim();
-      if (!userName) {
-        setErrorMessage("Nombre de usuario inválido.");
-        setLoading(false);
-        return;
-      }
-
-      // Obtener los datos de los planes educativos
-      const querySnapshot = await getDocs(collection(db, "planesEducativos"));
-      const dataList = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      const filteredData = dataList.filter(plan => plan.uidDocente?.trim() === userName);
-      setData(filteredData);
-
-      // Obtener los datos del docente
-      const userDocRef = doc(db, "docentes", userName);
-      const docSnap = await getDoc(userDocRef);
-      if (docSnap.exists()) {
-        setDocenteData(docSnap.data());
-      } else {
-        console.warn(`No se encontró documento del docente ${userName}.`);
-      }
-      setErrorMessage("");
-    } catch (error) {
-      console.error("Error al obtener los datos:", error);
-      setErrorMessage("Hubo un error al obtener los datos. Intenta nuevamente.");
-    } finally {
+  setLoading(true);
+  try {
+    const storedUsuario = localStorage.getItem("usuario");
+    if (!storedUsuario) {
+      setErrorMessage("No se encontró información del usuario. Por favor inicia sesión.");
       setLoading(false);
+      return;
     }
+
+    const usuario = JSON.parse(storedUsuario);
+    const userName = usuario.name?.trim();
+    if (!userName) {
+      setErrorMessage("Nombre de usuario inválido.");
+      setLoading(false);
+      return;
+    }
+
+    // Obtener los datos del docente
+    const userDocRef = doc(db, "docentes", userName);
+    const docSnap = await getDoc(userDocRef);
+    if (docSnap.exists()) {
+      setDocenteData(docSnap.data());
+    } else {
+      console.warn(`No se encontró documento del docente ${userName}.`);
+    }
+
+    // Obtener los planes educativos y filtrar por uidDocente
+    const querySnapshot = await getDocs(collection(db, "planesEducativos"));
+    const dataList = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    // Filtramos los planes educativos por el uidDocente
+    const filteredData = dataList.filter(plan => plan.uidDocente?.trim() === userName);
+    setData(filteredData);
+
+    // Obtener facultades, carreras y materias desde los planes educativos
+    const facultadesList = Array.from(new Set(filteredData.map((plan) => plan.facultad)));
+    setFacultades(facultadesList);
+
+    setErrorMessage("");
+  } catch (error) {
+    console.error("Error al obtener los datos:", error);
+    setErrorMessage("Hubo un error al obtener los datos. Intenta nuevamente.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  // Función para manejar la selección de facultad
+// Función para manejar la selección de facultad
+const handleFacultadChange = (event) => {
+  const selectedFacultad = event.target.value;
+  setSelectedFacultad(selectedFacultad);
+  setSelectedCarrera("");  // Reset carrera
+  setSelectedMateria("");  // Reset materia
+
+  // Filtrar las carreras disponibles para la facultad seleccionada
+  const carrerasList = data
+    .filter((plan) => plan.facultad === selectedFacultad)
+    .map((plan) => plan.carrera);
+  setCarreras(Array.from(new Set(carrerasList)));
+};
+
+// Función para manejar la selección de carrera
+const handleCarreraChange = (event) => {
+  const selectedCarrera = event.target.value;
+  setSelectedCarrera(selectedCarrera);
+  setSelectedMateria(""); // Reset materia
+
+  // Filtrar las materias disponibles para la carrera seleccionada
+  const materiasList = data
+    .filter((plan) => plan.carrera === selectedCarrera)
+    .map((plan) => plan.materia);
+  setMaterias(Array.from(new Set(materiasList)));
+};
+
+
+  // Función para manejar la selección de materia
+  const handleMateriaChange = (event) => {
+    const selectedMateria = event.target.value;
+    setSelectedMateria(selectedMateria);
   };
 
   const handleDelete = async () => {
@@ -105,6 +158,16 @@ const DataView = () => {
     fetchData();
   }, []);
 
+  // Filtrar los planes educativos según la selección del usuario
+  // Filtrar los planes educativos según la selección del usuario
+const filteredPlans = data.filter(
+  (plan) =>
+    (selectedFacultad ? plan.facultad === selectedFacultad : true) &&
+    (selectedCarrera ? plan.carrera === selectedCarrera : true) &&
+    (selectedMateria ? plan.materia === selectedMateria : true)
+);
+
+
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Paper elevation={5} sx={{ p: 8, borderRadius: 3, backgroundColor: "#FFF3E0" }}>
@@ -113,39 +176,94 @@ const DataView = () => {
         </Typography>
 
         {errorMessage && (
-          <Alert severity="error" sx={{ backgroundColor: "#FF7043", color: "#FFF" }}>{errorMessage}</Alert>
+          <Alert severity="error" sx={{ backgroundColor: "#FF7043", color: "#FFF" }}>
+            {errorMessage}
+          </Alert>
         )}
 
         {loading ? (
           <CircularProgress sx={{ color: "#FF7043", margin: "auto", display: "block" }} />
         ) : (
           <div>
-            {/* Mostrar los datos del docente */}
+            {/* Datos del docente */}
             <Paper sx={{ mb: 4, p: 3, backgroundColor: "#FFEBEE" }}>
               <Typography variant="h6" sx={{ fontWeight: "bold" }}>Datos del Docente</Typography>
-              <Typography><strong>Nombre:</strong> {docenteData.nombre}</Typography>
-              <Typography><strong>Cédula:</strong> {docenteData.cedula}</Typography>
-              <Typography><strong>Facultad:</strong> {docenteData.facultad}</Typography>
+              <Typography><strong>Nombre:</strong> {docenteData.nombre || "N/A"}</Typography>
+              <Typography><strong>Cédula:</strong> {docenteData.cedula || "N/A"}</Typography>
 
-              {/* Mostrar las carreras y materias */}
-              <Typography variant="h6" sx={{ fontWeight: "bold", mt: 2 }}>Carreras</Typography>
-              {docenteData.carreras && docenteData.carreras.length > 0 ? (
-                docenteData.carreras.map((carrera, index) => (
+              <Typography variant="h6" sx={{ fontWeight: "bold", mt: 2 }}>Facultades y Carreras</Typography>
+              {docenteData.facultades ? (
+                Object.keys(docenteData.facultades).map((facultad, index) => (
                   <div key={index}>
-                    <Typography><strong>{carrera.nombre}</strong></Typography>
+                    <Typography><strong>{facultad}</strong></Typography>
                     <ul>
-                      {carrera.materias?.map((materia, idx) => (
-                        <li key={idx}>{materia.nombre}</li>
+                      {docenteData.facultades[facultad].map((carrera, idx) => (
+                        <li key={idx}>
+                          <Typography><strong>{carrera.nombre}</strong></Typography>
+                          <ul>
+                            {carrera.materias?.map((materia, materiaIdx) => (
+                              <li key={materiaIdx}>
+                                {materia.nombre} ({materia.horasSemanales}h/sem - {materia.horasTotales}h totales)
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
                       ))}
                     </ul>
                   </div>
                 ))
               ) : (
-                <Typography>No hay carreras asignadas.</Typography>
+                <Typography>No hay facultades asignadas.</Typography>
               )}
             </Paper>
 
-            {/* Mostrar los planes educativos */}
+            {/* Selects para Facultad, Carrera y Materia */}
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Facultad</InputLabel>
+              <Select
+                value={selectedFacultad}
+                onChange={handleFacultadChange}
+                label="Facultad"
+              >
+                {facultades.map((facultad, index) => (
+                  <MenuItem key={index} value={facultad}>
+                    {facultad}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth sx={{ mb: 2 }} disabled={!selectedFacultad}>
+              <InputLabel>Carrera</InputLabel>
+              <Select
+                value={selectedCarrera}
+                onChange={handleCarreraChange}
+                label="Carrera"
+              >
+                {carreras.map((carrera, index) => (
+                  <MenuItem key={index} value={carrera}>
+                    {carrera}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth sx={{ mb: 2 }} disabled={!selectedCarrera}>
+              <InputLabel>Materia</InputLabel>
+              <Select
+                value={selectedMateria}
+                onChange={handleMateriaChange}
+                label="Materia"
+              >
+                {materias.map((materia, index) => (
+                  <MenuItem key={index} value={materia}>
+                    {materia}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Mostrar los planes educativos filtrados */}
             <TableContainer>
               <Table>
                 <TableHead sx={{ backgroundColor: "#FF7043" }}>
@@ -161,12 +279,12 @@ const DataView = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {data.length > 0 ? (
-                    data.map((plan) =>
-                      plan.unidades.map((unidad, index) => (
-                        <TableRow key={plan.id + "-" + index}>
-                          <TableCell align="center">{unidad.carrera}</TableCell>
-                          <TableCell align="center">{unidad.materia}</TableCell>
+                  {filteredPlans.length > 0 ? (
+                    filteredPlans.map((plan) =>
+                      plan.unidades?.map((unidad, index) => (
+                        <TableRow key={`${plan.id}-${index}`}>
+                          <TableCell align="center">{plan.carrera}</TableCell>
+                          <TableCell align="center">{plan.materia}</TableCell>
                           <TableCell align="center">{unidad.objetivos}</TableCell>
                           <TableCell align="center">{unidad.situaciones}</TableCell>
                           <TableCell align="center">{unidad.estrategias}</TableCell>
@@ -176,7 +294,7 @@ const DataView = () => {
                             <Button
                               variant="contained"
                               color="warning"
-                              sx={{ mr: 2 }}
+                              sx={{ mr: 1 }}
                               onClick={() => handleEdit(plan)}
                             >
                               Editar
@@ -205,7 +323,7 @@ const DataView = () => {
           </div>
         )}
 
-        {/* Dialog de confirmación para eliminar */}
+        {/* Diálogo de eliminación */}
         <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
           <DialogTitle>Confirmar Eliminación</DialogTitle>
           <DialogContent>
