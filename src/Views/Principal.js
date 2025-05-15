@@ -1,5 +1,3 @@
-//Principal.js
-import React from "react";
 import { Container, Paper, Typography, Grid, Box } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import AssignmentIcon from "@mui/icons-material/Assignment";
@@ -27,7 +25,7 @@ const Principal = ({ setUpdate }) => {
   const buttonsData = [
     {
       label: "Registrar Datos",
-      to: "/registrar-datos",
+      to: "/registro-docente",
       icon: <AssignmentIcon sx={{ fontSize: 40, color: "#FFF" }} />,
       bgColor: "#1E88E5", // Azul más intenso
     },
@@ -35,7 +33,7 @@ const Principal = ({ setUpdate }) => {
       ? [
           {
             label: "Registrar Plan",
-            to: "/form1",
+            to: "/registro-plan",
             icon: <PlaylistAddCheckIcon sx={{ fontSize: 40, color: "#FFF" }} />,
             bgColor: "#43A047", // Verde más intenso
           },
@@ -43,7 +41,7 @@ const Principal = ({ setUpdate }) => {
       : []),
     {
       label: "Ver Datos",
-      to: "/datos",
+      to: "/ver-datos",
       icon: <BookIcon sx={{ fontSize: 40, color: "#FFF" }} />,
       bgColor: "#FFCA28", // Amarillo más intenso
     },

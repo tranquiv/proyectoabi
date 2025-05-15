@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import { CalendarMonth, AccessTime, AddCircle } from "@mui/icons-material"; // Importamos iconos
 
-const PaginaPrincipal = () => {
+const Inicio = () => {
   const [usuario, setUsuario] = useState(null);
   const [fechaActual, setFechaActual] = useState(new Date());
   const [actividadesDelDia, setActividadesDelDia] = useState([]);
@@ -187,4 +187,4 @@ const PaginaPrincipal = () => {
   );
 };
 
-export default PaginaPrincipal;
+export default Inicio;

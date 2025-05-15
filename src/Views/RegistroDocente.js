@@ -23,7 +23,7 @@ import { Delete, Edit } from "@mui/icons-material";
 import { Autocomplete } from "@mui/material";
 
 
-const Datos = () => {
+const RegistroDocente = () => {
   const [form, setForm] = useState({
     nombre: "",
     cedula: "",
@@ -346,4 +346,4 @@ const Datos = () => {
   );
 };
 
-export default Datos;
+export default RegistroDocente;

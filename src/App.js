@@ -23,14 +23,15 @@ import {
 } from "@mui/material";
 import HomeIcon from "@mui/icons-material/Home";
 import MenuIcon from "@mui/icons-material/Menu";
-import Form1 from "./Views/Form1";
+import RegistroPlan from "./Views/RegistroPlan";
 import DataView from "./Views/DataView";
 import Login from "./Sesion/Login";
 import { fakeAuth } from "./Sesion/Managements";
 import Principal from "./Views/Principal";
 import Form2 from "./Views/Form2";
-import Datos from "./Views/Datos";
-import PaginaPrincipal from "./Views/PaginaPrincipal"; // Importamos el nuevo componente
+import RegistroDocente from "./Views/RegistroDocente";
+import Inicio from "./Views/Inicio";
+
 
 // Componente de navegación
 const Navigation = ({ setUpdate }) => {
@@ -59,17 +60,17 @@ const Navigation = ({ setUpdate }) => {
             <Button
               color="inherit"
               component={Link}
-              to="/principal"
+              to="/inicio"
               sx={{ fontWeight: "bold", color: "#FFF" }}
             >
               <HomeIcon sx={{ mr: 1 }} />
-              Principal
+              Inicio
             </Button>
             {/* Botón de menú principal (ahora contendrá el contenido de "Gestión") */}
             <Button
               color="inherit"
               component={Link}
-              to="/gestion"
+              to="/principal"
               sx={{ fontWeight: "bold", color: "#FFF" }}
             >
               <MenuIcon sx={{ mr: 1 }} />
@@ -136,7 +137,7 @@ const App = () => {
           />
           {/* Moviendo el contenido de /principal a /gestion */}
           <Route
-            path="/gestion"
+            path="/principal"
             element={
               fakeAuth.isAuthenticated ? (
                 <Principal setUpdate={setUpdate} />
@@ -147,20 +148,20 @@ const App = () => {
           />
           {/* La ruta /principal ahora renderiza PaginaPrincipal */}
           <Route
-            path="/principal"
+            path="/inicio"
             element={
               fakeAuth.isAuthenticated ? (
-                <PaginaPrincipal /> // Usamos el nuevo componente aquí
+                <Inicio /> // Usamos el nuevo componente aquí
               ) : (
                 <Navigate to="/login" />
               )
             }
           />
           <Route
-            path="/form1"
+            path="/registro-plan"
             element={
               fakeAuth.isAuthenticated ? (
-                <Form1 setUpdate={setUpdate} />
+                <RegistroPlan setUpdate={setUpdate} />
               ) : (
                 <Navigate to="/login" />
               )
@@ -173,13 +174,13 @@ const App = () => {
             }
           />
           <Route
-            path="/registrar-datos"
+            path="/registro-docente"
             element={
-              fakeAuth.isAuthenticated ? <Datos /> : <Navigate to="/login" />
+              fakeAuth.isAuthenticated ? <RegistroDocente /> : <Navigate to="/login" />
             }
           />
           <Route
-            path="/datos"
+            path="/ver-datos"
             element={
               fakeAuth.isAuthenticated ? <DataView /> : <Navigate to="/login" />
             }

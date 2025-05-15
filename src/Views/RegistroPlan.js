@@ -26,7 +26,7 @@ import {
 import { db } from "../firebaseConfig";
 import { collection, addDoc, Timestamp, doc, getDoc } from "firebase/firestore";
 
-const Form1 = () => {
+const RegistroPlan = () => {
   const [datosGenerales, setDatosGenerales] = useState({
     facultad: "",
     carrera: "",
@@ -477,4 +477,4 @@ const handleConfirmSave = async () => {
   );
 };
 
-export default Form1;
+export default RegistroPlan;
