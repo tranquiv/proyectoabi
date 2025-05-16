@@ -33,7 +33,7 @@ export const fakeAuth = {
         localStorage.setItem("isAuthenticated", true);
 
         setUpdate(prev => !prev); // Para refrescar el estado global
-        navigate('/form1');
+        navigate('/inicio');
         return true;
       } else {
         return false;

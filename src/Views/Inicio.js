@@ -1,4 +1,3 @@
-// Views/PaginaPrincipal.js
 import React, { useState, useEffect } from "react";
 import {
   Typography,
@@ -9,14 +8,16 @@ import {
   ListItem,
   ListItemText,
   Divider,
+  Checkbox,
 } from "@mui/material";
-import { CalendarMonth, AccessTime, AddCircle } from "@mui/icons-material"; // Importamos iconos
+import { CalendarMonth, AccessTime, AddCircle } from "@mui/icons-material";
+import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 const Inicio = () => {
   const [usuario, setUsuario] = useState(null);
   const [fechaActual, setFechaActual] = useState(new Date());
-  const [actividadesDelDia, setActividadesDelDia] = useState([]);
-  const [eventosDeHoy, setEventosDeHoy] = useState([]);
+  const [planesHoy, setPlanesHoy] = useState([]); // planes que toca hoy
 
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem("usuario"));
@@ -29,69 +30,68 @@ const Inicio = () => {
     return () => clearInterval(intervalId);
   }, []);
 
+  useEffect(() => {
+    if (usuario?.name) {
+  cargarPlanesDelDia(usuario.name, fechaActual);
+}
+
+  }, [usuario, fechaActual]);
+
+  const cargarPlanesDelDia = async (uidDocente, fecha) => {
+    try {
+      const diaSemana = fecha.toLocaleDateString("es-ES", { weekday: "long" }).toLowerCase(); 
+      // ej: "viernes"
+
+      // Consulta a Firestore:
+      const planesRef = collection(db, "planesEducativos");
+      const q = query(
+        planesRef,
+        where("uidDocente", "==", uidDocente),
+        where("dia", "==", diaSemana)
+      );
+      const querySnapshot = await getDocs(q);
+
+      const planes = [];
+      querySnapshot.forEach((docSnap) => {
+        planes.push({ id: docSnap.id, ...docSnap.data() });
+      });
+
+      setPlanesHoy(planes);
+    } catch (error) {
+      console.error("Error al cargar planes del día:", error);
+    }
+  };
+
+  // Función para actualizar el estado completado de una unidad y guardar en Firestore
+  const toggleCompletado = async (idPlan, indexUnidad) => {
+    try {
+      // Copiamos los planes para no mutar estado directo
+      const planesActualizados = [...planesHoy];
+
+      // Cambiamos el completado
+      const unidadActual = planesActualizados.find((p) => p.id === idPlan).unidades[indexUnidad];
+      unidadActual.completado = !unidadActual.completado;
+
+      // Actualizamos en Firestore
+      const planDocRef = doc(db, "planesEducativos", idPlan);
+      await updateDoc(planDocRef, {
+        unidades: planesActualizados.find((p) => p.id === idPlan).unidades,
+      });
+
+      // Actualizamos estado
+      setPlanesHoy(planesActualizados);
+    } catch (error) {
+      console.error("Error actualizando completado:", error);
+    }
+  };
+
   const opcionesFecha = {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   };
-  const fechaFormateada = fechaActual.toLocaleDateString(
-    undefined,
-    opcionesFecha
-  );
-
-  useEffect(() => {
-    if (usuario?.name) {
-      obtenerActividadesYEventos(usuario.name, fechaActual);
-    }
-  }, [usuario, fechaActual]);
-
-  const obtenerActividadesYEventos = async (uidDocente, fecha) => {
-    // Aquí iría la consulta real a la base de datos
-    // Por ahora, datos de ejemplo:
-    if (fecha.getDay() === 5) {
-      // Viernes
-      setEventosDeHoy([
-        {
-          id: "1",
-          horaInicio: "08:30",
-          horaFin: "10:00",
-          descripcion: "Clase de Química",
-        },
-        {
-          id: "2",
-          horaInicio: "10:00",
-          horaFin: "11:30",
-          descripcion: "Clase de Inglés",
-        },
-        {
-          id: "3",
-          horaInicio: "12:00",
-          horaFin: "13:00",
-          descripcion: "Almuerzo",
-        },
-        {
-          id: "4",
-          horaInicio: "13:30",
-          horaFin: "15:00",
-          descripcion: "Gimnasia - Tenis",
-        },
-        {
-          id: "5",
-          horaInicio: "15:30",
-          horaFin: "17:30",
-          descripcion: "Reunión de Cierre de Semana",
-        },
-      ]);
-      setActividadesDelDia([
-        { id: "6", descripcion: "Revisar tareas de la semana" },
-        { id: "7", descripcion: "Preparar la clase de la próxima semana" },
-      ]);
-    } else {
-      setEventosDeHoy([]);
-      setActividadesDelDia([]);
-    }
-  };
+  const fechaFormateada = fechaActual.toLocaleDateString(undefined, opcionesFecha);
 
   return (
     <Box
@@ -116,73 +116,44 @@ const Inicio = () => {
         mt={3}
         sx={{ display: "flex", alignItems: "center", gap: 1 }}
       >
-        <CalendarMonth /> Actividades del Día
+        <CalendarMonth /> Planes Educativos para Hoy
       </Typography>
-      <Box sx={{ width: "100%", maxWidth: 600 }}>
-        {actividadesDelDia.length === 0 ? (
-          <Button
-            variant="outlined"
-            color="primary"
-            sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1 }}
-          >
-            <AddCircle /> Agregar Actividades del Día
-          </Button>
-        ) : (
-          <Paper elevation={2} sx={{ mt: 2 }}>
-            <List>
-              {actividadesDelDia.map((actividad) => (
-                <React.Fragment key={actividad.id}>
-                  <ListItem>
-                    <ListItemText primary={actividad.descripcion} />
-                  </ListItem>
-                  <Divider />
-                </React.Fragment>
-              ))}
-            </List>
-          </Paper>
-        )}
-      </Box>
 
-      <Typography
-        variant="h6"
-        mt={3}
-        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-      >
-        <AccessTime /> Agenda del Día
-      </Typography>
-      <Box sx={{ width: "100%", maxWidth: 600 }}>
-        {eventosDeHoy.length === 0 ? (
-          <Button
-            variant="outlined"
-            color="primary"
-            sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1 }}
-          >
-            <AddCircle /> Agregar Eventos a la Agenda
-          </Button>
-        ) : (
-          <Paper elevation={2} sx={{ mt: 2 }}>
+      {planesHoy.length === 0 ? (
+        <Typography sx={{ mt: 2 }}>No tienes planes educativos para hoy.</Typography>
+      ) : (
+        planesHoy.map((plan) => (
+          <Paper key={plan.id} elevation={3} sx={{ mt: 3, p: 2, width: "100%", maxWidth: 700 }}>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              {plan.materia} - {plan.carrera} ({plan.facultad})
+            </Typography>
+            <Typography variant="body2" mb={2}>
+              Día: {plan.dia.charAt(0).toUpperCase() + plan.dia.slice(1)}
+            </Typography>
+
             <List>
-              {eventosDeHoy.map((evento) => (
-                <React.Fragment key={evento.id}>
-                  <ListItem
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <ListItemText
-                      primary={evento.descripcion}
-                      secondary={`${evento.horaInicio} - ${evento.horaFin}`}
+              {plan.unidades.map((unidad, index) => (
+                <ListItem
+                  key={index}
+                  secondaryAction={
+                    <Checkbox
+                      edge="end"
+                      checked={unidad.completado || false}
+                      onChange={() => toggleCompletado(plan.id, index)}
+                      inputProps={{ "aria-label": `Completado ${unidad.unidad}` }}
                     />
-                  </ListItem>
-                  <Divider />
-                </React.Fragment>
+                  }
+                >
+                  <ListItemText
+                    primary={unidad.unidad}
+                    secondary={`Objetivos: ${unidad.objetivos}`}
+                  />
+                </ListItem>
               ))}
             </List>
           </Paper>
-        )}
-      </Box>
+        ))
+      )}
     </Box>
   );
 };

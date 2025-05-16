@@ -19,7 +19,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow
 } from "@mui/material";
@@ -31,6 +30,7 @@ const RegistroPlan = () => {
     facultad: "",
     carrera: "",
     materia: "",
+    dia: "",
   });
 
   const [unidadData, setUnidadData] = useState({
@@ -91,8 +91,8 @@ const RegistroPlan = () => {
   const handleChange = (e) => {
   const { name, value } = e.target;
 
-  // Datos generales
-  if (["facultad", "carrera", "materia"].includes(name)) {
+  // Incluye "dia" también aquí
+  if (["facultad", "carrera", "materia", "dia"].includes(name)) {
     if (name === "facultad") {
       const facultadSeleccionada = facultades.find(f => f.nombre === value);
       const carrerasExtraidas = facultadSeleccionada?.carreras || [];
@@ -102,6 +102,7 @@ const RegistroPlan = () => {
         facultad: value,
         carrera: "",
         materia: "",
+        dia: datosGenerales.dia, // mantener el dia que ya haya o "" si quieres resetear
       });
     } else if (name === "carrera") {
       const carreraSeleccionada = carreras.find(c => c.nombre === value);
@@ -128,6 +129,7 @@ const RegistroPlan = () => {
 };
 
 
+
  const validateUnidad = () => {
   return Object.values(unidadData).every((val) => val !== "");
 };
@@ -137,7 +139,14 @@ const RegistroPlan = () => {
     setErrorMessage("Por favor, completá todos los campos de la unidad.");
     return;
   }
-  setUnidades((prev) => [...prev, unidadData]);
+  
+  const nuevaUnidad = {
+    ...unidadData,
+    completado: false,  // campo agregado con valor inicial false
+  };
+  
+  setUnidades((prev) => [...prev, nuevaUnidad]);
+  
   setUnidadData({
     unidad: "",
     objetivos: "",
@@ -146,6 +155,7 @@ const RegistroPlan = () => {
     recursos: "",
     tiempo: "",
   });
+  
   setSuccessMessage("Unidad agregada correctamente.");
 };
 
@@ -187,6 +197,7 @@ const handleConfirmSave = async () => {
   facultad: datosGenerales.facultad,
   carrera: datosGenerales.carrera,
   materia: datosGenerales.materia,
+  dia: datosGenerales.dia,
 });
 
       
@@ -213,6 +224,7 @@ const handleConfirmSave = async () => {
       facultad: "",
       carrera: "",
       materia: "",
+      dia: "",
     });
     setUnidadData({
       unidad: "",
@@ -305,7 +317,24 @@ const handleConfirmSave = async () => {
               </Select>
             </FormControl>
           </Grid>
+          <Grid item xs={12}>
+            <FormControl margin="normal" required sx={{ width: 250 }}>
+              <InputLabel>Día a Desarrollarse</InputLabel>
+              <Select
+                name="dia"
+                value={datosGenerales.dia}
+                onChange={handleChange}
+                label="Día a Desarrollarse"
+              >
+                {["lunes", "martes", "miércoles", "jueves", "viernes"].map((d) => (
+                  <MenuItem key={d} value={d}>{d}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
         </Grid>
+
       </Box>
 
       <Divider sx={{ mb: 3 }} />
